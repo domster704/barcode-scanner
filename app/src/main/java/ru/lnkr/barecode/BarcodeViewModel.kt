@@ -31,6 +31,8 @@ class BarcodeViewModel : ViewModel() {
     private lateinit var _cameraProviderFuture: MutableState<ListenableFuture<ProcessCameraProvider>>
     val cameraProviderFuture get() = _cameraProviderFuture.value
 
+    var isOpenDialog by mutableStateOf(false)
+
     fun setHasCameraPermissionInit(context: Context) {
         _hasCameraPermission = mutableStateOf(
             ContextCompat.checkSelfPermission(

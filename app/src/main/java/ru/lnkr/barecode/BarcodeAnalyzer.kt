@@ -94,8 +94,8 @@ class BarcodeAnalyzer(
                     mapOf(
                         DecodeHintType.POSSIBLE_FORMATS to arrayListOf(
                             BarcodeFormat.EAN_13,
-                            BarcodeFormat.EAN_8,
-                            BarcodeFormat.QR_CODE,
+//                            BarcodeFormat.EAN_8,
+//                            BarcodeFormat.QR_CODE,
                         )
                     )
                 )

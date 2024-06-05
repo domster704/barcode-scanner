@@ -1,7 +1,6 @@
 package ru.lnkr.barecode
 
 import android.os.Bundle
-import android.util.Log
 import android.util.Size
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -11,20 +10,17 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.resolutionselector.ResolutionSelector
-import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -70,12 +66,23 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.weight(1f),
                             lifecycleOwner = lifecycleOwner,
                         )
-                        Text(
-                            text = barcodeViewModel.code,
-                            fontSize = 20.sp,
-                            modifier = Modifier
-                                .padding(30.dp)
-                                .fillMaxWidth()
+                        if (barcodeViewModel.code.isEmpty()) {
+                            return@Column
+                        }
+                        if (!barcodeViewModel.isOpenDialog) {
+                            return@Column
+                        }
+                        AlertDialog(
+                            onDismissRequest = {},
+                            confirmButton = {
+                                Button(onClick = {
+                                    barcodeViewModel.isOpenDialog = false
+                                }) {
+                                    Text(text = "ОК", fontSize = 16.sp)
+                                }
+                            },
+                            title = { Text(text = "Код ${barcodeViewModel.code}") },
+                            text = { Text("Приложение отсканировало код ${barcodeViewModel.code}") }
                         )
                     }
                 }
@@ -112,18 +119,8 @@ fun BarcodeCameraView(
             preview.setSurfaceProvider(previewView.surfaceProvider)
 
             val imageAnalysis = ImageAnalysis.Builder()
-                .setResolutionSelector(
-                    ResolutionSelector.Builder()
-                        .setResolutionStrategy(
-                            /**
-                             * Определяет стратегию выбора разрешения (использует ближайшее большее
-                             * разрешение)
-                             */
-                            ResolutionStrategy(
-                                Size(0, 0),
-                                ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER
-                            )
-                        ).build()
+                .setTargetResolution(
+                    Size(previewView.width, previewView.height)
                 )
                 /**
                  * Устанавливает стратегию обработки нагрузки (хранит только последнее
@@ -136,6 +133,7 @@ fun BarcodeCameraView(
                 ContextCompat.getMainExecutor(context),
                 BarcodeAnalyzer { result ->
                     vm.code = result
+                    vm.isOpenDialog = true
                 }
             )
 
