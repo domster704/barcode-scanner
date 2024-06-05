@@ -56,9 +56,7 @@ class MainActivity : ComponentActivity() {
                     }
                 )
 
-                /**
-                 * Запуск запроса разрешений при запуске приложения.
-                 */
+                /** Запуск запроса разрешений при запуске приложения. */
                 LaunchedEffect(key1 = true) {
                     launcher.launch(android.Manifest.permission.CAMERA)
                 }
@@ -92,30 +90,49 @@ fun BarcodeCameraView(
     modifier: Modifier,
     lifecycleOwner: LifecycleOwner
 ) {
+    /** [AndroidView] - компонент Compose для включения обычных Android Views */
     AndroidView(
+        /**
+         * factory -> context - лямбда-функция, создающая и возвращающая
+         * [PreviewView]
+         */
         factory = { context ->
+            /** Вид для предварительного просмотра камеры */
             val previewView = PreviewView(context)
+
+            /** Создает объект Preview для отображения предварительного просмотра. */
             val preview = androidx.camera.core.Preview.Builder().build()
+
+            /** Создает [CameraSelector], указывающий, что используется задняя камера. */
             val selector = CameraSelector.Builder()
                 .requireLensFacing(CameraSelector.LENS_FACING_BACK)
                 .build()
 
-
+            /** Устанавливает поставщика поверхности для предварительного просмотра. */
             preview.setSurfaceProvider(previewView.surfaceProvider)
-            Log.d("xd", "${previewView.width}, ${previewView.height}")
+
             val imageAnalysis = ImageAnalysis.Builder()
                 .setResolutionSelector(
                     ResolutionSelector.Builder()
                         .setResolutionStrategy(
+                            /**
+                             * Определяет стратегию выбора разрешения (использует ближайшее большее
+                             * разрешение)
+                             */
                             ResolutionStrategy(
                                 Size(0, 0),
                                 ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER
                             )
                         ).build()
                 )
+                /**
+                 * Устанавливает стратегию обработки нагрузки (хранит только последнее
+                 * изображение).
+                 */
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build()
             imageAnalysis.setAnalyzer(
+                /** Получает главный исполнитель для выполнения задач в основном потоке. */
                 ContextCompat.getMainExecutor(context),
                 BarcodeAnalyzer { result ->
                     vm.code = result
@@ -125,6 +142,10 @@ fun BarcodeCameraView(
             try {
                 vm.cameraProviderFuture
                     .get()
+                    /**
+                     * Привязывает предварительный просмотр и анализ изображений к жизненному
+                     * циклу [lifecycleOwner].
+                     */
                     .bindToLifecycle(
                         lifecycleOwner,
                         selector,
