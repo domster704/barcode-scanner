@@ -6,4 +6,5 @@
 - CameraX
 - Zxing
 
-![IMG_20240605_134205_481](https://github.com/domster704/BarcodeScanner/assets/61056244/5d426960-840a-44d6-9416-5541b3021200)
+![Screenshot_2024-06-05-16-20-10-396_ru lnkr barecode](https://github.com/domster704/barcode-scanner/assets/61056244/29cfba8d-0676-4269-9d31-dbd071d52c33)
+
