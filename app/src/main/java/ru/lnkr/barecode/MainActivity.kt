@@ -1,14 +1,18 @@
 package ru.lnkr.barecode
 
 import android.os.Bundle
+import android.util.Log
 import android.util.Size
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -31,7 +35,7 @@ class MainActivity : ComponentActivity() {
     private val barcodeViewModel: BarcodeViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        enableEdgeToEdge()
         setContent {
             BarcodeScannerTheme {
                 val context = LocalContext.current
@@ -88,14 +92,18 @@ fun BarcodeCameraView(
                 .requireLensFacing(CameraSelector.LENS_FACING_BACK)
                 .build()
 
+
             preview.setSurfaceProvider(previewView.surfaceProvider)
+            Log.d("xd", "${previewView.width}, ${previewView.height}")
             val imageAnalysis = ImageAnalysis.Builder()
-                .setResolutionSelector()
-                .setTargetResolution(
-                    Size(
-                        previewView.width,
-                        previewView.height
-                    )
+                .setResolutionSelector(
+                    ResolutionSelector.Builder()
+                        .setResolutionStrategy(
+                            ResolutionStrategy(
+                                Size(0, 0),
+                                ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER
+                            )
+                        ).build()
                 )
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build()
