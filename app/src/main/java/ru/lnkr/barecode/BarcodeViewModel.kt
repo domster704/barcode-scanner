@@ -12,12 +12,22 @@ import androidx.lifecycle.ViewModel
 import com.google.common.util.concurrent.ListenableFuture
 
 
+/**
+ * Компонент ViewModel для хранения стейтов приложения. Наследуется от
+ * ViewModel.
+ */
 class BarcodeViewModel : ViewModel() {
+    /** Результат расшифровки barcode. */
     var code by mutableStateOf("")
 
+    /** Проверка на разрешение на использование камеры. */
     private lateinit var _hasCameraPermission: MutableState<Boolean>
     val hasCameraPermission get() = _hasCameraPermission.value
 
+    /**
+     * Провайдер для встраивания жизненного цикла камеры в основной цикл
+     * приложения.
+     */
     private lateinit var _cameraProviderFuture: MutableState<ListenableFuture<ProcessCameraProvider>>
     val cameraProviderFuture get() = _cameraProviderFuture.value
 

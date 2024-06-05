@@ -44,6 +44,11 @@ class MainActivity : ComponentActivity() {
                 barcodeViewModel.setHasCameraPermissionInit(context)
                 barcodeViewModel.setCameraProviderFutureInit(context)
 
+                /**
+                 * Запуска запроса разрешений при запуске приложения.
+                 * [rememberLauncherForActivityResult] - регистратор
+                 * на запуск действия для получения запроса разрешений
+                 */
                 val launcher = rememberLauncherForActivityResult(
                     contract = ActivityResultContracts.RequestPermission(),
                     onResult = { granted ->
@@ -51,6 +56,9 @@ class MainActivity : ComponentActivity() {
                     }
                 )
 
+                /**
+                 * Запуск запроса разрешений при запуске приложения.
+                 */
                 LaunchedEffect(key1 = true) {
                     launcher.launch(android.Manifest.permission.CAMERA)
                 }
