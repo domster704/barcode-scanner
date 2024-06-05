@@ -1,30 +1,22 @@
 package ru.lnkr.barecode
 
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Size
-import android.view.Surface
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.resolutionselector.ResolutionSelector
-import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -36,29 +28,22 @@ import androidx.lifecycle.LifecycleOwner
 import ru.lnkr.barecode.ui.theme.BarcodeScannerTheme
 
 class MainActivity : ComponentActivity() {
+    private val barcodeViewModel: BarcodeViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+
         setContent {
             BarcodeScannerTheme {
-                var code by remember { mutableStateOf("") }
                 val context = LocalContext.current
                 val lifecycleOwner = LocalLifecycleOwner.current
-                val cameraProviderFuture = remember {
-                    ProcessCameraProvider.getInstance(context)
-                }
-                var hasCameraPermission by remember {
-                    mutableStateOf(
-                        ContextCompat.checkSelfPermission(
-                            context,
-                            android.Manifest.permission.CAMERA
-                        ) == PackageManager.PERMISSION_GRANTED
-                    )
-                }
+
+                barcodeViewModel.setHasCameraPermissionInit(context)
+                barcodeViewModel.setCameraProviderFutureInit(context)
+
                 val launcher = rememberLauncherForActivityResult(
                     contract = ActivityResultContracts.RequestPermission(),
                     onResult = { granted ->
-                        hasCameraPermission = granted
+                        barcodeViewModel.setHasCameraPermission(granted)
                     }
                 )
 
@@ -69,50 +54,14 @@ class MainActivity : ComponentActivity() {
                 Column(
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    if (hasCameraPermission) {
-                        AndroidView(
-                            factory = { context ->
-                                val previewView = PreviewView(context)
-                                val preview = androidx.camera.core.Preview.Builder().build()
-                                val selector = CameraSelector.Builder()
-                                    .requireLensFacing(CameraSelector.LENS_FACING_BACK)
-                                    .build()
-
-                                preview.setSurfaceProvider(previewView.surfaceProvider)
-                                val imageAnalysis = ImageAnalysis.Builder()
-                                    .setTargetResolution(
-                                        Size(
-                                            previewView.width,
-                                            previewView.height
-                                        )
-                                    )
-                                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                                    .build()
-                                imageAnalysis.setAnalyzer(
-                                    ContextCompat.getMainExecutor(context),
-                                    BarcodeAnalyzer { result ->
-                                        code = result
-                                    }
-                                )
-
-                                try {
-                                    cameraProviderFuture
-                                        .get()
-                                        .bindToLifecycle(
-                                            lifecycleOwner,
-                                            selector,
-                                            preview,
-                                            imageAnalysis
-                                        )
-                                } catch (e: Exception) {
-                                    e.printStackTrace()
-                                }
-                                previewView
-                            },
-                            modifier = Modifier.weight(1f)
+                    if (barcodeViewModel.hasCameraPermission) {
+                        BarcodeCameraView(
+                            vm = barcodeViewModel,
+                            modifier = Modifier.weight(1f),
+                            lifecycleOwner = lifecycleOwner,
                         )
                         Text(
-                            text = code,
+                            text = barcodeViewModel.code,
                             fontSize = 20.sp,
                             modifier = Modifier
                                 .padding(30.dp)
@@ -123,4 +72,54 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+}
+
+@Composable
+fun BarcodeCameraView(
+    vm: BarcodeViewModel,
+    modifier: Modifier,
+    lifecycleOwner: LifecycleOwner
+) {
+    AndroidView(
+        factory = { context ->
+            val previewView = PreviewView(context)
+            val preview = androidx.camera.core.Preview.Builder().build()
+            val selector = CameraSelector.Builder()
+                .requireLensFacing(CameraSelector.LENS_FACING_BACK)
+                .build()
+
+            preview.setSurfaceProvider(previewView.surfaceProvider)
+            val imageAnalysis = ImageAnalysis.Builder()
+                .setResolutionSelector()
+                .setTargetResolution(
+                    Size(
+                        previewView.width,
+                        previewView.height
+                    )
+                )
+                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                .build()
+            imageAnalysis.setAnalyzer(
+                ContextCompat.getMainExecutor(context),
+                BarcodeAnalyzer { result ->
+                    vm.code = result
+                }
+            )
+
+            try {
+                vm.cameraProviderFuture
+                    .get()
+                    .bindToLifecycle(
+                        lifecycleOwner,
+                        selector,
+                        preview,
+                        imageAnalysis
+                    )
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            previewView
+        },
+        modifier = modifier
+    )
 }
